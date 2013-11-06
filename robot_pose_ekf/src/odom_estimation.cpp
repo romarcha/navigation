@@ -404,106 +404,138 @@ bool OdomEstimation::update(bool odom_active,
 
 void OdomEstimation::addMeasurement(const StampedTransform& meas)
 {
-ROS_DEBUG("AddMeasurement from %s to %s:  (%f, %f, %f)  (%f, %f, %f, %f)",
-meas.frame_id_.c_str(), meas.child_frame_id_.c_str(),
-meas.getOrigin().x(), meas.getOrigin().y(), meas.getOrigin().z(),
-meas.getRotation().x(),  meas.getRotation().y(),
-meas.getRotation().z(), meas.getRotation().w());
-transformer_.setTransform( meas );
+    ROS_DEBUG("AddMeasurement from %s to %s:  (%f, %f, %f)  (%f, %f, %f, %f)",
+                meas.frame_id_.c_str(), meas.child_frame_id_.c_str(),
+                meas.getOrigin().x(), meas.getOrigin().y(), meas.getOrigin().z(),
+                meas.getRotation().x(),  meas.getRotation().y(),
+                meas.getRotation().z(), meas.getRotation().w());
+    transformer_.setTransform( meas );
 }
 
 void OdomEstimation::addMeasurement(const StampedTransform& meas, const MatrixWrapper::SymmetricMatrix& covar)
 {
-// check covariance
-for (unsigned int i=0; i<covar.rows(); i++){
-if (covar(i+1,i+1) == 0){
-ROS_ERROR("Covariance specified for measurement on topic %s is zero", meas.child_frame_id_.c_str());
-return;
+    // check covariance
+    for (unsigned int i=0; i<covar.rows(); i++)
+    {
+        if (covar(i+1,i+1) == 0)
+        {
+            ROS_ERROR("Covariance specified for measurement on topic %s"
+                      " is zero", meas.child_frame_id_.c_str());
+            return;
+        }
+    }
+    // add measurements
+    addMeasurement(meas);
+    if (meas.child_frame_id_ == odom_frame_id_)
+    {
+        odom_covariance_ = covar;
+    }
+    else if (meas.child_frame_id_ == imu_frame_id_)
+    {
+        imu_covariance_  = covar;
+    }
+    else if (meas.child_frame_id_ == gps_frame_id_)
+    {
+        gps_covariance_   = covar;
+    }
+    else
+    {
+        ROS_ERROR("Adding a measurement for an unknown sensor %s",
+                   meas.child_frame_id_.c_str());
+    }
 }
-}
-// add measurements
-addMeasurement(meas);
-if (meas.child_frame_id_ == "wheelodom") odom_covariance_ = covar;
-else if (meas.child_frame_id_ == "imu")  imu_covariance_  = covar;
-else if (meas.child_frame_id_ == "gps")   gps_covariance_   = covar;
-else ROS_ERROR("Adding a measurement for an unknown sensor %s", meas.child_frame_id_.c_str());
-};
 
 
 // get latest filter posterior as vector
 void OdomEstimation::getEstimate(ColumnVector& estimate)
 {
-estimate = filter_estimate_old_vec_;
-};
+    estimate = filter_estimate_old_vec_;
+}
 
 // get filter posterior at time 'time' as Transform
 void OdomEstimation::getEstimate(Time time, Transform& estimate)
 {
-StampedTransform tmp;
-if (!transformer_.canTransform("base_footprint","odom_combined", time)){
-ROS_ERROR("Cannot get transform at time %f", time.toSec());
-return;
+    StampedTransform tmp;
+    if (!transformer_.canTransform(base_frame_id_,output_frame_id_, time))
+    {
+        ROS_ERROR("Cannot get transform at time %f", time.toSec());
+        return;
+    }
+    transformer_.lookupTransform(output_frame_id_, base_frame_id_, time, tmp);
+    estimate = tmp;
 }
-transformer_.lookupTransform("odom_combined", "base_footprint", time, tmp);
-estimate = tmp;
-};
 
 // get filter posterior at time 'time' as Stamped Transform
 void OdomEstimation::getEstimate(Time time, StampedTransform& estimate)
 {
-if (!transformer_.canTransform("odom_combined", "base_footprint", time)){
-ROS_ERROR("Cannot get transform at time %f", time.toSec());
-return;
+    if (!transformer_.canTransform(output_frame_id_, base_frame_id_, time))
+    {
+        ROS_ERROR("Cannot get transform at time %f", time.toSec());
+        return;
+    }
+    transformer_.lookupTransform(odom_frame_id_, base_frame_id_, time, estimate);
 }
-transformer_.lookupTransform("odom_combined", "base_footprint", time, estimate);
-};
 
 // get most recent filter posterior as PoseWithCovarianceStamped
-void OdomEstimation::getEstimate(geometry_msgs::PoseWithCovarianceStamped& estimate)
+void OdomEstimation::getEstimate(
+                geometry_msgs::PoseWithCovarianceStamped& estimate)
 {
-// pose
-StampedTransform tmp;
-if (!transformer_.canTransform("odom_combined", "base_footprint", ros::Time())){
-ROS_ERROR("Cannot get transform at time %f", 0.0);
-return;
+    // pose
+    StampedTransform tmp;
+    if (!transformer_.canTransform(output_frame_id_,
+                                   base_frame_id_, ros::Time()))
+    {
+        ROS_ERROR("Cannot get transform at time %f", 0.0);
+        return;
+    }
+    transformer_.lookupTransform(output_frame_id_,
+                                 base_frame_id_, ros::Time(), tmp);
+    poseTFToMsg(tmp, estimate.pose.pose);
+
+    // header
+    estimate.header.stamp = tmp.stamp_;
+    estimate.header.frame_id = output_frame_id_;
+
+    // covariance
+    SymmetricMatrix covar =  filter_->PostGet()->CovarianceGet();
+    for (unsigned int i=0; i<6; i++)
+    for (unsigned int j=0; j<6; j++)
+    estimate.pose.covariance[6*i+j] = covar(i+1,j+1);
 }
-transformer_.lookupTransform("odom_combined", "base_footprint", ros::Time(), tmp);
-poseTFToMsg(tmp, estimate.pose.pose);
-
-// header
-estimate.header.stamp = tmp.stamp_;
-estimate.header.frame_id = "odom";
-
-// covariance
-SymmetricMatrix covar =  filter_->PostGet()->CovarianceGet();
-for (unsigned int i=0; i<6; i++)
-for (unsigned int j=0; j<6; j++)
-estimate.pose.covariance[6*i+j] = covar(i+1,j+1);
-};
 
 // correct for angle overflow
 void OdomEstimation::angleOverflowCorrect(double& a, double ref)
 {
-while ((a-ref) >  M_PI) a -= 2*M_PI;
-while ((a-ref) < -M_PI) a += 2*M_PI;
-};
+    while ((a-ref) >  M_PI)
+    {
+        a -= 2*M_PI;
+    }
+    while ((a-ref) < -M_PI)
+    {
+        a += 2*M_PI;
+    }
+}
 
 // decompose Transform into x,y,z,Rx,Ry,Rz
 void OdomEstimation::decomposeTransform(const StampedTransform& trans,
-double& x, double& y, double&z, double&Rx, double& Ry, double& Rz){
-x = trans.getOrigin().x();
-y = trans.getOrigin().y();
-z = trans.getOrigin().z();
-trans.getBasis().getEulerYPR(Rz, Ry, Rx);
-};
+                                        double& x, double& y, double&z,
+                                        double&Rx, double& Ry, double& Rz)
+{
+    x = trans.getOrigin().x();
+    y = trans.getOrigin().y();
+    z = trans.getOrigin().z();
+    trans.getBasis().getEulerYPR(Rz, Ry, Rx);
+}
 
 // decompose Transform into x,y,z,Rx,Ry,Rz
 void OdomEstimation::decomposeTransform(const Transform& trans,
-double& x, double& y, double&z, double&Rx, double& Ry, double& Rz){
-x = trans.getOrigin().x();
-y = trans.getOrigin().y();
-z = trans.getOrigin().z();
-trans.getBasis().getEulerYPR(Rz, Ry, Rx);
-};
+                                        double& x, double& y, double&z,
+                                        double&Rx, double& Ry, double& Rz)
+{
+    x = trans.getOrigin().x();
+    y = trans.getOrigin().y();
+    z = trans.getOrigin().z();
+    trans.getBasis().getEulerYPR(Rz, Ry, Rx);
+}
 
-}; // namespace
+} // namespace
