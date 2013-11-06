@@ -124,6 +124,9 @@ private:
   bool odom_initializing_, imu_initializing_, gps_initializing_;
   double timeout_;
 
+  std::string odom_topic_, imu_topic_, gps_topic_;
+  std::string base_frame_id_, odom_frame_id_, imu_frame_id_,gps_frame_id_;
+
   MatrixWrapper::SymmetricMatrix odom_covariance_,
                                  imu_covariance_,
                                  gps_covariance_;
