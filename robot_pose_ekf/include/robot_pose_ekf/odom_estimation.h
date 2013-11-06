@@ -147,7 +147,7 @@ private:
   // vars
   MatrixWrapper::ColumnVector vel_desi_, filter_estimate_old_vec_;
   tf::Transform filter_estimate_old_;
-  tf::StampedTransform odom_meas_, odom_meas_old_, imu_meas_, imu_meas_old_, vo_meas_, vo_meas_old_;
+  tf::StampedTransform odom_meas_, odom_meas_old_, imu_meas_, imu_meas_old_, gps_meas_, vo_meas_old_;
   ros::Time filter_time_old_;
   bool filter_initialized_, odom_initialized_, imu_initialized_, vo_initialized_;
 

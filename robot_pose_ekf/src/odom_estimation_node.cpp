@@ -272,11 +272,11 @@ namespace estimation
     // get data
     vo_stamp_ = gps->header.stamp;
     vo_time_  = Time::now();
-    poseMsgToTF(gps->pose.pose, vo_meas_);
+    poseMsgToTF(gps->pose.pose, gps_meas_);
     for (unsigned int i=0; i<6; i++)
       for (unsigned int j=0; j<6; j++)
         vo_covariance_(i+1, j+1) = gps->pose.covariance[6*i+j];
-    my_filter_.addMeasurement(StampedTransform(vo_meas_.inverse(), vo_stamp_, "base_footprint", "gps"), vo_covariance_);
+    my_filter_.addMeasurement(StampedTransform(gps_meas_.inverse(), vo_stamp_, "base_footprint", "gps"), vo_covariance_);
     
     // activate gps
     if (!vo_active_) {
@@ -297,8 +297,8 @@ namespace estimation
     if (debug_){
       // write to file
       double Rx, Ry, Rz;
-      vo_meas_.getBasis().getEulerYPR(Rz, Ry, Rx);
-      vo_file_ << vo_meas_.getOrigin().x() << " " << vo_meas_.getOrigin().y() << " " << vo_meas_.getOrigin().z() << " "
+      gps_meas_.getBasis().getEulerYPR(Rz, Ry, Rx);
+      vo_file_ << gps_meas_.getOrigin().x() << " " << gps_meas_.getOrigin().y() << " " << gps_meas_.getOrigin().z() << " "
                << Rx << " " << Ry << " " << Rz << endl;
     }
   };
@@ -381,7 +381,7 @@ namespace estimation
         ROS_INFO("Kalman filter initialized with odom measurement");
       }
       else if ( vo_active_ && !my_filter_.isInitialized()){
-        my_filter_.initialize(vo_meas_, vo_stamp_);
+        my_filter_.initialize(gps_meas_, vo_stamp_);
         ROS_INFO("Kalman filter initialized with gps measurement");
       }
     }

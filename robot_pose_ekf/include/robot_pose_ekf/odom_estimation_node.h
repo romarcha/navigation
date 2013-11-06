@@ -96,7 +96,8 @@ private:
   void gpsCallback(const GPSConstPtr& gps);
 
   /// get the status of the filter
-  bool getStatus(robot_pose_ekf::GetStatus::Request& req, robot_pose_ekf::GetStatus::Response& resp);
+  bool getStatus(robot_pose_ekf::GetStatus::Request& req,
+                 robot_pose_ekf::GetStatus::Response& resp);
 
   ros::NodeHandle node_;
   ros::Timer timer_;
@@ -115,7 +116,7 @@ private:
   tf::TransformBroadcaster odom_broadcaster_;
 
   // vectors
-  tf::Transform odom_meas_, imu_meas_, vo_meas_;
+  tf::Transform odom_meas_, imu_meas_, gps_meas_;
   tf::Transform base_vo_init_;
   tf::StampedTransform camera_base_;
   ros::Time odom_time_, imu_time_, vo_time_;

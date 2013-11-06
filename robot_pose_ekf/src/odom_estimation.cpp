@@ -238,10 +238,10 @@ namespace estimation
         ROS_ERROR("filter time older than gps message buffer");
         return false;
       }
-      transformer_.lookupTransform("gps", "base_footprint", filter_time, vo_meas_);
+      transformer_.lookupTransform("gps", "base_footprint", filter_time, gps_meas_);
       if (vo_initialized_){
     // convert absolute gps measurements to relative gps measurements
-	Transform vo_rel_frame =  filter_estimate_old_ * vo_meas_old_.inverse() * vo_meas_;
+    Transform vo_rel_frame =  filter_estimate_old_ * vo_meas_old_.inverse() * gps_meas_;
 	ColumnVector vo_rel(6);
 	decomposeTransform(vo_rel_frame, vo_rel(1),  vo_rel(2), vo_rel(3), vo_rel(4), vo_rel(5), vo_rel(6));
 	angleOverflowCorrect(vo_rel(6), filter_estimate_old_vec_(6));
@@ -250,7 +250,7 @@ namespace estimation
         filter_->Update(vo_meas_model_,  vo_rel);
       }
       else vo_initialized_ = true;
-      vo_meas_old_ = vo_meas_;
+      vo_meas_old_ = gps_meas_;
     }
     // sensor not active
     else vo_initialized_ = false;
