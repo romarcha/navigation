@@ -298,54 +298,76 @@ bool OdomEstimation::update(bool odom_active,
     // -----------------------
     if (imu_active)
     {
-        if (!transformer_.canTransform("base_footprint","imu", filter_time)){
-        ROS_ERROR("filter time older than imu message buffer");
-        return false;
+        if (!transformer_.canTransform(base_frame_id_,imu_frame_id_, filter_time))
+        {
+            ROS_ERROR("filter time older than imu message buffer");
+            return false;
         }
-        transformer_.lookupTransform("imu", "base_footprint", filter_time, imu_meas_);
-        if (imu_initialized_){
-        // convert absolute imu yaw measurement to relative imu yaw measurement
-        Transform imu_rel_frame =  filter_estimate_old_ * imu_meas_old_.inverse() * imu_meas_;
-        ColumnVector imu_rel(3); double tmp;
-        decomposeTransform(imu_rel_frame, tmp, tmp, tmp, tmp, tmp, imu_rel(3));
-        decomposeTransform(imu_meas_,     tmp, tmp, tmp, imu_rel(1), imu_rel(2), tmp);
-        angleOverflowCorrect(imu_rel(3), filter_estimate_old_vec_(6));
-        diagnostics_imu_rot_rel_ = imu_rel(3);
-        // update filter
-        imu_meas_pdf_->AdditiveNoiseSigmaSet(imu_covariance_ * pow(dt,2));
-        filter_->Update(imu_meas_model_,  imu_rel);
+        transformer_.lookupTransform(imu_frame_id_,
+                                     base_frame_id_,
+                                     filter_time, imu_meas_);
+        if (imu_initialized_)
+        {
+            // convert absolute imu yaw measurement to relative imu
+            // yaw measurement
+            Transform imu_rel_frame =  filter_estimate_old_ *
+                                        imu_meas_old_.inverse() * imu_meas_;
+
+            ColumnVector imu_rel(3); double tmp;
+            decomposeTransform(imu_rel_frame,
+                               tmp, tmp, tmp,
+                               tmp, tmp, imu_rel(3));
+            decomposeTransform(imu_meas_, tmp, tmp, tmp,
+                               imu_rel(1), imu_rel(2), tmp);
+            angleOverflowCorrect(imu_rel(3), filter_estimate_old_vec_(6));
+            diagnostics_imu_rot_rel_ = imu_rel(3);
+            // update filter
+            imu_meas_pdf_->AdditiveNoiseSigmaSet(imu_covariance_ * pow(dt,2));
+            filter_->Update(imu_meas_model_,  imu_rel);
         }
-        else{
-        imu_initialized_ = true;
-        diagnostics_imu_rot_rel_ = 0;
+        else
+        {
+            imu_initialized_ = true;
+            diagnostics_imu_rot_rel_ = 0;
         }
         imu_meas_old_ = imu_meas_;
     }
     // sensor not active
-    else imu_initialized_ = false;
+    else
+    {
+        imu_initialized_ = false;
+    }
 
 
 
     // process gps measurement
     // ----------------------
-    if (gps_active){
-    if (!transformer_.canTransform("base_footprint","gps", filter_time)){
-    ROS_ERROR("filter time older than gps message buffer");
-    return false;
-    }
-    transformer_.lookupTransform("gps", "base_footprint", filter_time, gps_meas_);
-    if (gps_initialized_){
-    // convert absolute gps measurements to relative gps measurements
-    Transform gps_rel_frame =  filter_estimate_old_ * gps_meas_old_.inverse() * gps_meas_;
-    ColumnVector gps_rel(6);
-    decomposeTransform(gps_rel_frame, gps_rel(1),  gps_rel(2), gps_rel(3), gps_rel(4), gps_rel(5), gps_rel(6));
-    angleOverflowCorrect(gps_rel(6), filter_estimate_old_vec_(6));
-    // update filter
-    gps_meas_pdf_->AdditiveNoiseSigmaSet(gps_covariance_ * pow(dt,2));
-    filter_->Update(gps_meas_model_,  gps_rel);
-    }
-    else gps_initialized_ = true;
-    gps_meas_old_ = gps_meas_;
+    if (gps_active)
+    {
+        if (!transformer_.canTransform(base_frame_id_,
+                                       gps_frame_id_, filter_time))
+        {
+            ROS_ERROR("filter time older than gps message buffer");
+            return false;
+        }
+        transformer_.lookupTransform(gps_frame_id_, base_frame_id_,
+                                     filter_time, gps_meas_);
+        if (gps_initialized_)
+        {
+            // convert absolute gps measurements to relative gps measurements
+            Transform gps_rel_frame =  filter_estimate_old_ *
+                                        gps_meas_old_.inverse() * gps_meas_;
+            ColumnVector gps_rel(6);
+            decomposeTransform(gps_rel_frame,
+                               gps_rel(1),  gps_rel(2), gps_rel(3),
+                               gps_rel(4), gps_rel(5), gps_rel(6));
+            angleOverflowCorrect(gps_rel(6), filter_estimate_old_vec_(6));
+            // update filter
+            gps_meas_pdf_->AdditiveNoiseSigmaSet(gps_covariance_ * pow(dt,2));
+            filter_->Update(gps_meas_model_,  gps_rel);
+        }
+        else gps_initialized_ = true;
+        gps_meas_old_ = gps_meas_;
     }
     // sensor not active
     else gps_initialized_ = false;
@@ -354,19 +376,27 @@ bool OdomEstimation::update(bool odom_active,
     // remember last estimate
     filter_estimate_old_vec_ = filter_->PostGet()->ExpectedValueGet();
     tf::Quaternion q;
-    q.setRPY(filter_estimate_old_vec_(4), filter_estimate_old_vec_(5), filter_estimate_old_vec_(6));
+    q.setRPY(filter_estimate_old_vec_(4),
+             filter_estimate_old_vec_(5),
+             filter_estimate_old_vec_(6));
     filter_estimate_old_ = Transform(q,
-    Vector3(filter_estimate_old_vec_(1), filter_estimate_old_vec_(2), filter_estimate_old_vec_(3)));
+                                Vector3(filter_estimate_old_vec_(1),
+                                        filter_estimate_old_vec_(2),
+                                        filter_estimate_old_vec_(3)));
     filter_time_old_ = filter_time;
-    addMeasurement(StampedTransform(filter_estimate_old_, filter_time, "odom_combined", "base_footprint"));
+    addMeasurement(StampedTransform(filter_estimate_old_,
+                                    filter_time,
+                                    output_frame_id_, base_frame_id_));
 
     // diagnostics
     diagnostics_res = true;
-    if (odom_active && imu_active){
-    double diagnostics = fabs(diagnostics_odom_rot_rel_ - diagnostics_imu_rot_rel_)/dt;
-    if (diagnostics > 0.3 && dt > 0.01){
-    diagnostics_res = false;
-    }
+    if (odom_active && imu_active)
+    {
+        double diagnostics = fabs(diagnostics_odom_rot_rel_ - diagnostics_imu_rot_rel_)/dt;
+        if (diagnostics > 0.3 && dt > 0.01)
+        {
+            diagnostics_res = false;
+        }
     }
 
     return true;
