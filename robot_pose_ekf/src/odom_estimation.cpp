@@ -52,7 +52,7 @@ namespace estimation
     filter_initialized_(false),
     odom_initialized_(false),
     imu_initialized_(false),
-    vo_initialized_(false)
+    gps_initialized_(false)
   {
     // create SYSTEM MODEL
     ColumnVector sysNoise_Mu(6);  sysNoise_Mu = 0;
@@ -89,8 +89,8 @@ namespace estimation
     Gaussian measurement_Uncertainty_Vo(measNoiseVo_Mu, measNoiseVo_Cov);
     Matrix Hvo(6,6);  Hvo = 0;
     Hvo(1,1) = 1;    Hvo(2,2) = 1;    Hvo(3,3) = 1;    Hvo(4,4) = 1;    Hvo(5,5) = 1;    Hvo(6,6) = 1;
-    vo_meas_pdf_   = new LinearAnalyticConditionalGaussian(Hvo, measurement_Uncertainty_Vo);
-    vo_meas_model_ = new LinearAnalyticMeasurementModelGaussianUncertainty(vo_meas_pdf_);
+    gps_meas_pdf_   = new LinearAnalyticConditionalGaussian(Hvo, measurement_Uncertainty_Vo);
+    gps_meas_model_ = new LinearAnalyticMeasurementModelGaussianUncertainty(gps_meas_pdf_);
   };
 
 
@@ -103,8 +103,8 @@ namespace estimation
     delete odom_meas_pdf_;
     delete imu_meas_model_;
     delete imu_meas_pdf_;
-    delete vo_meas_model_;
-    delete vo_meas_pdf_;
+    delete gps_meas_model_;
+    delete gps_meas_pdf_;
     delete sys_pdf_;
     delete sys_model_;
   };
@@ -141,7 +141,7 @@ namespace estimation
 
 
   // update filter
-  bool OdomEstimation::update(bool odom_active, bool imu_active, bool vo_active, const Time&  filter_time, bool& diagnostics_res)
+  bool OdomEstimation::update(bool odom_active, bool imu_active, bool gps_active, const Time&  filter_time, bool& diagnostics_res)
   {
     // only update filter when it is initialized
     if (!filter_initialized_){
@@ -233,27 +233,27 @@ namespace estimation
     
     // process gps measurement
     // ----------------------
-    if (vo_active){
+    if (gps_active){
       if (!transformer_.canTransform("base_footprint","gps", filter_time)){
         ROS_ERROR("filter time older than gps message buffer");
         return false;
       }
       transformer_.lookupTransform("gps", "base_footprint", filter_time, gps_meas_);
-      if (vo_initialized_){
+      if (gps_initialized_){
     // convert absolute gps measurements to relative gps measurements
-    Transform vo_rel_frame =  filter_estimate_old_ * vo_meas_old_.inverse() * gps_meas_;
-	ColumnVector vo_rel(6);
-	decomposeTransform(vo_rel_frame, vo_rel(1),  vo_rel(2), vo_rel(3), vo_rel(4), vo_rel(5), vo_rel(6));
-	angleOverflowCorrect(vo_rel(6), filter_estimate_old_vec_(6));
+    Transform gps_rel_frame =  filter_estimate_old_ * gps_meas_old_.inverse() * gps_meas_;
+    ColumnVector gps_rel(6);
+    decomposeTransform(gps_rel_frame, gps_rel(1),  gps_rel(2), gps_rel(3), gps_rel(4), gps_rel(5), gps_rel(6));
+    angleOverflowCorrect(gps_rel(6), filter_estimate_old_vec_(6));
 	// update filter
-        vo_meas_pdf_->AdditiveNoiseSigmaSet(gps_covariance_ * pow(dt,2));
-        filter_->Update(vo_meas_model_,  vo_rel);
+        gps_meas_pdf_->AdditiveNoiseSigmaSet(gps_covariance_ * pow(dt,2));
+        filter_->Update(gps_meas_model_,  gps_rel);
       }
-      else vo_initialized_ = true;
-      vo_meas_old_ = gps_meas_;
+      else gps_initialized_ = true;
+      gps_meas_old_ = gps_meas_;
     }
     // sensor not active
-    else vo_initialized_ = false;
+    else gps_initialized_ = false;
     
     
     // remember last estimate

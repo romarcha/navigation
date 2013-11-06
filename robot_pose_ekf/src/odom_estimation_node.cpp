@@ -74,7 +74,7 @@ namespace estimation
     nh_private.param("sensor_timeout", timeout_, 1.0);
     nh_private.param("odom_used", odom_used_, true);
     nh_private.param("imu_used",  imu_used_, true);
-    nh_private.param("vo_used",   gps_used_, true);
+    nh_private.param("gps_used",   gps_used_, true);
     nh_private.param("debug",   debug_, false);
     nh_private.param("self_diagnose",  self_diagnose_, false);
     double freq;
@@ -116,7 +116,7 @@ namespace estimation
       // open files for debugging
       odom_file_.open("/tmp/odom_file.txt");
       imu_file_.open("/tmp/imu_file.txt");
-      gps_file_.open("/tmp/vo_file.txt");
+      gps_file_.open("/tmp/gps_file.txt");
       corr_file_.open("/tmp/corr_file.txt");
       time_file_.open("/tmp/time_file.txt");
       extra_file_.open("/tmp/extra_file.txt");
