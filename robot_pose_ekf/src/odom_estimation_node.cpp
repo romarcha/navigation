@@ -36,17 +36,12 @@
 
 #include <robot_pose_ekf/odom_estimation_node.h>
 
-
 using namespace MatrixWrapper;
 using namespace std;
 using namespace ros;
 using namespace tf;
 
-
 static const double EPS = 1e-5;
-
-
-//#define __EKF_DEBUG_FILE__
 
 namespace estimation
 {
@@ -123,9 +118,6 @@ namespace estimation
     }
   };
 
-
-
-
   // destructor
   OdomEstimationNode::~OdomEstimationNode(){
 
@@ -139,10 +131,6 @@ namespace estimation
       extra_file_.close();
     }
   };
-
-
-
-
 
   // callback function for odom data
   void OdomEstimationNode::odomCallback(const OdomConstPtr& odom)
@@ -187,9 +175,6 @@ namespace estimation
       odom_file_ << odom_meas_.getOrigin().x() << " " << odom_meas_.getOrigin().y() << "  " << yaw << "  " << endl;
     }
   };
-
-
-
 
   // callback function for imu data
   void OdomEstimationNode::imuCallback(const ImuConstPtr& imu)
@@ -259,9 +244,6 @@ namespace estimation
     }
   };
 
-
-
-
   // callback function for GPS data
   void OdomEstimationNode::gpsCallback(const GPSConstPtr& gps)
   {
@@ -302,10 +284,6 @@ namespace estimation
                << Rx << " " << Ry << " " << Rz << endl;
     }
   };
-
-
-
-
 
   // filter loop
   void OdomEstimationNode::spin(const ros::TimerEvent& e)
@@ -387,7 +365,6 @@ namespace estimation
     }
   };
 
-
 bool OdomEstimationNode::getStatus(robot_pose_ekf::GetStatus::Request& req, robot_pose_ekf::GetStatus::Response& resp)
 {
   stringstream ss;
@@ -414,9 +391,6 @@ bool OdomEstimationNode::getStatus(robot_pose_ekf::GetStatus::Request& req, robo
 }
 
 }; // namespace
-
-
-
 
 
 
