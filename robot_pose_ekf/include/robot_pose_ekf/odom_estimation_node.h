@@ -92,8 +92,8 @@ private:
   /// callback function for imu data
   void imuCallback(const ImuConstPtr& imu);
 
-  /// callback function for vo data
-  void voCallback(const GPSConstPtr& vo);
+  /// callback function for gps data
+  void gpsCallback(const GPSConstPtr& gps);
 
   /// get the status of the filter
   bool getStatus(robot_pose_ekf::GetStatus::Request& req, robot_pose_ekf::GetStatus::Response& resp);

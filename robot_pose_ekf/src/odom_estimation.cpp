@@ -231,16 +231,16 @@ namespace estimation
     
     
     
-    // process vo measurement
+    // process gps measurement
     // ----------------------
     if (vo_active){
-      if (!transformer_.canTransform("base_footprint","vo", filter_time)){
-        ROS_ERROR("filter time older than vo message buffer");
+      if (!transformer_.canTransform("base_footprint","gps", filter_time)){
+        ROS_ERROR("filter time older than gps message buffer");
         return false;
       }
-      transformer_.lookupTransform("vo", "base_footprint", filter_time, vo_meas_);
+      transformer_.lookupTransform("gps", "base_footprint", filter_time, vo_meas_);
       if (vo_initialized_){
-	// convert absolute vo measurements to relative vo measurements
+    // convert absolute gps measurements to relative gps measurements
 	Transform vo_rel_frame =  filter_estimate_old_ * vo_meas_old_.inverse() * vo_meas_;
 	ColumnVector vo_rel(6);
 	decomposeTransform(vo_rel_frame, vo_rel(1),  vo_rel(2), vo_rel(3), vo_rel(4), vo_rel(5), vo_rel(6));
@@ -300,7 +300,7 @@ namespace estimation
     addMeasurement(meas);
     if (meas.child_frame_id_ == "wheelodom") odom_covariance_ = covar;
     else if (meas.child_frame_id_ == "imu")  imu_covariance_  = covar;
-    else if (meas.child_frame_id_ == "vo")   vo_covariance_   = covar;
+    else if (meas.child_frame_id_ == "gps")   vo_covariance_   = covar;
     else ROS_ERROR("Adding a measurement for an unknown sensor %s", meas.child_frame_id_.c_str());
   };
 

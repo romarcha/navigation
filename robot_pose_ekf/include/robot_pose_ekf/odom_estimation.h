@@ -69,7 +69,7 @@ public:
   /** update the extended Kalman filter
    * \param odom_active specifies if the odometry sensor is active or not
    * \param imu_active specifies if the imu sensor is active or not
-   * \param vo_active specifies if the vo sensor is active or not
+   * \param vo_active specifies if the gps sensor is active or not
    * \param filter_time update the ekf up to this time
    * \param diagnostics_res returns false if the diagnostics found that the sensor measurements are inconsistent
    * returns true on successfull update

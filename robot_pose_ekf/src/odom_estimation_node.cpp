@@ -102,10 +102,10 @@ namespace estimation
     }
     else ROS_DEBUG("Imu sensor will NOT be used");
 
-    // subscribe to vo messages
+    // subscribe to gps messages
     if (vo_used_){
       ROS_DEBUG("VO sensor can be used");
-      vo_sub_ = nh.subscribe("vo", 10, &OdomEstimationNode::voCallback, this);
+      vo_sub_ = nh.subscribe("gps", 10, &OdomEstimationNode::gpsCallback, this);
     }
     else ROS_DEBUG("VO sensor will NOT be used");
 
@@ -263,22 +263,22 @@ namespace estimation
 
 
   // callback function for VO data
-  void OdomEstimationNode::voCallback(const GPSConstPtr& vo)
+  void OdomEstimationNode::gpsCallback(const GPSConstPtr& gps)
   {
     vo_callback_counter_++;
 
     assert(vo_used_);
 
     // get data
-    vo_stamp_ = vo->header.stamp;
+    vo_stamp_ = gps->header.stamp;
     vo_time_  = Time::now();
-    poseMsgToTF(vo->pose.pose, vo_meas_);
+    poseMsgToTF(gps->pose.pose, vo_meas_);
     for (unsigned int i=0; i<6; i++)
       for (unsigned int j=0; j<6; j++)
-        vo_covariance_(i+1, j+1) = vo->pose.covariance[6*i+j];
-    my_filter_.addMeasurement(StampedTransform(vo_meas_.inverse(), vo_stamp_, "base_footprint", "vo"), vo_covariance_);
+        vo_covariance_(i+1, j+1) = gps->pose.covariance[6*i+j];
+    my_filter_.addMeasurement(StampedTransform(vo_meas_.inverse(), vo_stamp_, "base_footprint", "gps"), vo_covariance_);
     
-    // activate vo
+    // activate gps
     if (!vo_active_) {
       if (!vo_initializing_){
 	vo_initializing_ = true;
@@ -382,7 +382,7 @@ namespace estimation
       }
       else if ( vo_active_ && !my_filter_.isInitialized()){
         my_filter_.initialize(vo_meas_, vo_stamp_);
-        ROS_INFO("Kalman filter initialized with vo measurement");
+        ROS_INFO("Kalman filter initialized with gps measurement");
       }
     }
   };
