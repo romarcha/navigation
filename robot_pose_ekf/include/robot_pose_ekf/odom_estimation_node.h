@@ -71,7 +71,6 @@ namespace estimation
 typedef boost::shared_ptr<nav_msgs::Odometry const> OdomConstPtr;
 typedef boost::shared_ptr<sensor_msgs::Imu const> ImuConstPtr;
 typedef boost::shared_ptr<nav_msgs::Odometry const> GPSConstPtr;
-typedef boost::shared_ptr<geometry_msgs::Twist const> VelConstPtr;
 
 class OdomEstimationNode
 {

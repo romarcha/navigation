@@ -85,7 +85,7 @@ public:
   /** check if the filter is initialized
    * returns true if the ekf has been initialized already
    */
-  bool isInitialized() {return filter_initialized_;};
+  bool isInitialized() {return filter_initialized_;}
 
   /** get the filter posterior
    * \param estimate the filter posterior as a columnvector

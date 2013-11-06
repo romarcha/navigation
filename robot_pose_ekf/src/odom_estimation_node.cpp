@@ -104,10 +104,10 @@ namespace estimation
 
     // subscribe to gps messages
     if (gps_used_){
-      ROS_DEBUG("VO sensor can be used");
+      ROS_DEBUG("GPS sensor can be used");
       gps_sub_ = nh.subscribe("gps", 10, &OdomEstimationNode::gpsCallback, this);
     }
-    else ROS_DEBUG("VO sensor will NOT be used");
+    else ROS_DEBUG("GPS sensor will NOT be used");
 
     // publish state service
     state_srv_ = nh_private.advertiseService("get_status", &OdomEstimationNode::getStatus, this);
@@ -262,7 +262,7 @@ namespace estimation
 
 
 
-  // callback function for VO data
+  // callback function for GPS data
   void OdomEstimationNode::gpsCallback(const GPSConstPtr& gps)
   {
     gps_callback_counter_++;
@@ -283,14 +283,14 @@ namespace estimation
       if (!gps_initializing_){
     gps_initializing_ = true;
     gps_init_stamp_ = gps_stamp_;
-	ROS_INFO("Initializing Vo sensor");      
+    ROS_INFO("Initializing Gps sensor");
       }
       if (filter_stamp_ >= gps_init_stamp_){
     gps_active_ = true;
     gps_initializing_ = false;
-	ROS_INFO("Vo sensor activated");      
+    ROS_INFO("Gps sensor activated");
       }
-      else ROS_DEBUG("Waiting to activate VO, because VO measurements are still %f sec in the future.", 
+      else ROS_DEBUG("Waiting to activate GPS, because GPS measurements are still %f sec in the future.",
             (gps_init_stamp_ - filter_stamp_).toSec());
     }
     
@@ -335,7 +335,7 @@ namespace estimation
     if ((gps_active_ || gps_initializing_) &&
         (Time::now() - gps_time_).toSec() > timeout_){
       gps_active_ = false;  gps_initializing_ = false;
-      ROS_INFO("VO sensor not active any more");
+      ROS_INFO("GPS sensor not active any more");
     }
     
     // only update filter when one of the sensors is active

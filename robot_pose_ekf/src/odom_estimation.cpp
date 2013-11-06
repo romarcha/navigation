@@ -82,14 +82,14 @@ namespace estimation
     imu_meas_pdf_   = new LinearAnalyticConditionalGaussian(Himu, measurement_Uncertainty_Imu);
     imu_meas_model_ = new LinearAnalyticMeasurementModelGaussianUncertainty(imu_meas_pdf_);
 
-    // create MEASUREMENT MODEL VO
-    ColumnVector measNoiseVo_Mu(6);  measNoiseVo_Mu = 0;
-    SymmetricMatrix measNoiseVo_Cov(6);  measNoiseVo_Cov = 0;
-    for (unsigned int i=1; i<=6; i++) measNoiseVo_Cov(i,i) = 1;
-    Gaussian measurement_Uncertainty_Vo(measNoiseVo_Mu, measNoiseVo_Cov);
+    // create MEASUREMENT MODEL GPS
+    ColumnVector measNoiseGps_Mu(6);  measNoiseGps_Mu = 0;
+    SymmetricMatrix measNoiseGps_Cov(6);  measNoiseGps_Cov = 0;
+    for (unsigned int i=1; i<=6; i++) measNoiseGps_Cov(i,i) = 1;
+    Gaussian measurement_Uncertainty_Gps(measNoiseGps_Mu, measNoiseGps_Cov);
     Matrix Hvo(6,6);  Hvo = 0;
     Hvo(1,1) = 1;    Hvo(2,2) = 1;    Hvo(3,3) = 1;    Hvo(4,4) = 1;    Hvo(5,5) = 1;    Hvo(6,6) = 1;
-    gps_meas_pdf_   = new LinearAnalyticConditionalGaussian(Hvo, measurement_Uncertainty_Vo);
+    gps_meas_pdf_   = new LinearAnalyticConditionalGaussian(Hvo, measurement_Uncertainty_Gps);
     gps_meas_model_ = new LinearAnalyticMeasurementModelGaussianUncertainty(gps_meas_pdf_);
   };
 
