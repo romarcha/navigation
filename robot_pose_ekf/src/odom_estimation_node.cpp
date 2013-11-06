@@ -263,7 +263,7 @@ namespace estimation
 
 
   // callback function for VO data
-  void OdomEstimationNode::voCallback(const VoConstPtr& vo)
+  void OdomEstimationNode::voCallback(const GPSConstPtr& vo)
   {
     vo_callback_counter_++;
 

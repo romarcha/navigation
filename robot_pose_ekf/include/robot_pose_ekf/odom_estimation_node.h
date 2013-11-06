@@ -70,7 +70,7 @@ namespace estimation
 
 typedef boost::shared_ptr<nav_msgs::Odometry const> OdomConstPtr;
 typedef boost::shared_ptr<sensor_msgs::Imu const> ImuConstPtr;
-typedef boost::shared_ptr<nav_msgs::Odometry const> VoConstPtr;
+typedef boost::shared_ptr<nav_msgs::Odometry const> GPSConstPtr;
 typedef boost::shared_ptr<geometry_msgs::Twist const> VelConstPtr;
 
 class OdomEstimationNode
@@ -93,7 +93,7 @@ private:
   void imuCallback(const ImuConstPtr& imu);
 
   /// callback function for vo data
-  void voCallback(const VoConstPtr& vo);
+  void voCallback(const GPSConstPtr& vo);
 
   /// get the status of the filter
   bool getStatus(robot_pose_ekf::GetStatus::Request& req, robot_pose_ekf::GetStatus::Response& resp);
