@@ -142,7 +142,7 @@ private:
   BFL::LinearAnalyticMeasurementModelGaussianUncertainty* vo_meas_model_;
   BFL::Gaussian*                                          prior_;
   BFL::ExtendedKalmanFilter*                              filter_;
-  MatrixWrapper::SymmetricMatrix                          odom_covariance_, imu_covariance_, vo_covariance_;
+  MatrixWrapper::SymmetricMatrix                          odom_covariance_, imu_covariance_, gps_covariance_;
 
   // vars
   MatrixWrapper::ColumnVector vel_desi_, filter_estimate_old_vec_;

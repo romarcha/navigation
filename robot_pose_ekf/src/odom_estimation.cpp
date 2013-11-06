@@ -246,7 +246,7 @@ namespace estimation
 	decomposeTransform(vo_rel_frame, vo_rel(1),  vo_rel(2), vo_rel(3), vo_rel(4), vo_rel(5), vo_rel(6));
 	angleOverflowCorrect(vo_rel(6), filter_estimate_old_vec_(6));
 	// update filter
-        vo_meas_pdf_->AdditiveNoiseSigmaSet(vo_covariance_ * pow(dt,2));
+        vo_meas_pdf_->AdditiveNoiseSigmaSet(gps_covariance_ * pow(dt,2));
         filter_->Update(vo_meas_model_,  vo_rel);
       }
       else vo_initialized_ = true;
@@ -300,7 +300,7 @@ namespace estimation
     addMeasurement(meas);
     if (meas.child_frame_id_ == "wheelodom") odom_covariance_ = covar;
     else if (meas.child_frame_id_ == "imu")  imu_covariance_  = covar;
-    else if (meas.child_frame_id_ == "gps")   vo_covariance_   = covar;
+    else if (meas.child_frame_id_ == "gps")   gps_covariance_   = covar;
     else ROS_ERROR("Adding a measurement for an unknown sensor %s", meas.child_frame_id_.c_str());
   };
 
