@@ -45,60 +45,109 @@ using namespace ros;
 
 namespace estimation
 {
-  // constructor
-  OdomEstimation::OdomEstimation():
+// constructor
+OdomEstimation::OdomEstimation():
     prior_(NULL),
     filter_(NULL),
+    output_frame_id_("odom_combined"),
+    base_frame_id_("base_link"),
+    odom_frame_id_("odom"),
+    imu_frame_id_("imu"),
+    gps_frame_id_("gps"),
     filter_initialized_(false),
     odom_initialized_(false),
     imu_initialized_(false),
     gps_initialized_(false)
-  {
+{
     // create SYSTEM MODEL
-    ColumnVector sysNoise_Mu(6);  sysNoise_Mu = 0;
-    SymmetricMatrix sysNoise_Cov(6); sysNoise_Cov = 0;
-    for (unsigned int i=1; i<=6; i++) sysNoise_Cov(i,i) = pow(1000.0,2);
+    ColumnVector sysNoise_Mu(6);
+    sysNoise_Mu = 0;
+    SymmetricMatrix sysNoise_Cov(6);
+    sysNoise_Cov = 0;
+    for (unsigned int i=1; i<=6; i++)
+    {
+        sysNoise_Cov(i,i) = pow(1000.0,2);
+    }
     Gaussian system_Uncertainty(sysNoise_Mu, sysNoise_Cov);
     sys_pdf_   = new NonLinearAnalyticConditionalGaussianOdo(system_Uncertainty);
     sys_model_ = new AnalyticSystemModelGaussianUncertainty(sys_pdf_);
 
     // create MEASUREMENT MODEL ODOM
-    ColumnVector measNoiseOdom_Mu(6);  measNoiseOdom_Mu = 0;
-    SymmetricMatrix measNoiseOdom_Cov(6);  measNoiseOdom_Cov = 0;
-    for (unsigned int i=1; i<=6; i++) measNoiseOdom_Cov(i,i) = 1;
+    ColumnVector measNoiseOdom_Mu(6);
+    measNoiseOdom_Mu = 0;
+    SymmetricMatrix measNoiseOdom_Cov(6);
+    measNoiseOdom_Cov = 0;
+    for (unsigned int i=1; i<=6; i++)
+    {
+        measNoiseOdom_Cov(i,i) = 1;
+    }
     Gaussian measurement_Uncertainty_Odom(measNoiseOdom_Mu, measNoiseOdom_Cov);
     Matrix Hodom(6,6);  Hodom = 0;
     Hodom(1,1) = 1;    Hodom(2,2) = 1;    Hodom(6,6) = 1;
-    odom_meas_pdf_   = new LinearAnalyticConditionalGaussian(Hodom, measurement_Uncertainty_Odom);
-    odom_meas_model_ = new LinearAnalyticMeasurementModelGaussianUncertainty(odom_meas_pdf_);
+    odom_meas_pdf_   = new LinearAnalyticConditionalGaussian(
+                                                Hodom,
+                                                measurement_Uncertainty_Odom);
+    odom_meas_model_ = new LinearAnalyticMeasurementModelGaussianUncertainty(
+                                                odom_meas_pdf_);
 
     // create MEASUREMENT MODEL IMU
-    ColumnVector measNoiseImu_Mu(3);  measNoiseImu_Mu = 0;
-    SymmetricMatrix measNoiseImu_Cov(3);  measNoiseImu_Cov = 0;
-    for (unsigned int i=1; i<=3; i++) measNoiseImu_Cov(i,i) = 1;
+    ColumnVector measNoiseImu_Mu(3);
+    measNoiseImu_Mu = 0;
+    SymmetricMatrix measNoiseImu_Cov(3);
+    measNoiseImu_Cov = 0;
+    for (unsigned int i=1; i<=3; i++)
+    {
+        measNoiseImu_Cov(i,i) = 1;
+    }
     Gaussian measurement_Uncertainty_Imu(measNoiseImu_Mu, measNoiseImu_Cov);
-    Matrix Himu(3,6);  Himu = 0;
-    Himu(1,4) = 1;    Himu(2,5) = 1;    Himu(3,6) = 1;
-    imu_meas_pdf_   = new LinearAnalyticConditionalGaussian(Himu, measurement_Uncertainty_Imu);
-    imu_meas_model_ = new LinearAnalyticMeasurementModelGaussianUncertainty(imu_meas_pdf_);
+    Matrix Himu(3,6);
+    Himu = 0;
+    Himu(1,4) = 1;
+    Himu(2,5) = 1;
+    Himu(3,6) = 1;
+    imu_meas_pdf_   = new LinearAnalyticConditionalGaussian(
+                                                Himu,
+                                                measurement_Uncertainty_Imu);
+    imu_meas_model_ = new LinearAnalyticMeasurementModelGaussianUncertainty(
+                                                imu_meas_pdf_);
+
 
     // create MEASUREMENT MODEL GPS
-    ColumnVector measNoiseGps_Mu(6);  measNoiseGps_Mu = 0;
-    SymmetricMatrix measNoiseGps_Cov(6);  measNoiseGps_Cov = 0;
-    for (unsigned int i=1; i<=6; i++) measNoiseGps_Cov(i,i) = 1;
+    ColumnVector measNoiseGps_Mu(6);
+    measNoiseGps_Mu = 0;
+    SymmetricMatrix measNoiseGps_Cov(6);
+    measNoiseGps_Cov = 0;
+    for (unsigned int i=1; i<=6; i++)
+    {
+        measNoiseGps_Cov(i,i) = 1;
+    }
     Gaussian measurement_Uncertainty_Gps(measNoiseGps_Mu, measNoiseGps_Cov);
-    Matrix Hvo(6,6);  Hvo = 0;
-    Hvo(1,1) = 1;    Hvo(2,2) = 1;    Hvo(3,3) = 1;    Hvo(4,4) = 1;    Hvo(5,5) = 1;    Hvo(6,6) = 1;
-    gps_meas_pdf_   = new LinearAnalyticConditionalGaussian(Hvo, measurement_Uncertainty_Gps);
-    gps_meas_model_ = new LinearAnalyticMeasurementModelGaussianUncertainty(gps_meas_pdf_);
-  };
+    Matrix Hvo(6,6);
+    Hvo = 0;
+    Hvo(1,1) = 1;
+    Hvo(2,2) = 1;
+    Hvo(3,3) = 1;
+    Hvo(4,4) = 1;
+    Hvo(5,5) = 1;
+    Hvo(6,6) = 1;
+    gps_meas_pdf_   = new LinearAnalyticConditionalGaussian(
+                                                   Hvo,
+                                                   measurement_Uncertainty_Gps);
+    gps_meas_model_ = new LinearAnalyticMeasurementModelGaussianUncertainty(
+                                                   gps_meas_pdf_);
+}
 
-
-
-  // destructor
-  OdomEstimation::~OdomEstimation(){
-    if (filter_) delete filter_;
-    if (prior_)  delete prior_;
+// destructor
+OdomEstimation::~OdomEstimation()
+{
+    if (filter_)
+    {
+        delete filter_;
+    }
+    if (prior_)
+    {
+        delete prior_;
+    }
     delete odom_meas_model_;
     delete odom_meas_pdf_;
     delete imu_meas_model_;
@@ -107,21 +156,43 @@ namespace estimation
     delete gps_meas_pdf_;
     delete sys_pdf_;
     delete sys_model_;
-  };
+}
+
+void OdomEstimation::setFrameIds(std::string base_frame_id,
+                            std::string odom_frame_id,
+                            std::string imu_frame_id,
+                            std::string gps_frame_id,
+                            std::string output_frame_id)
+{
+    base_frame_id_ = base_frame_id;
+    odom_frame_id_ = odom_frame_id;
+    imu_frame_id_ = imu_frame_id;
+    gps_frame_id_ = gps_frame_id;
+    output_frame_id_ = output_frame_id;
+}
 
 
-  // initialize prior density of filter 
-  void OdomEstimation::initialize(const Transform& prior, const Time& time)
-  {
+// initialize prior density of filter
+void OdomEstimation::initialize(const Transform& prior, const Time& time)
+{
     // set prior of filter
-    ColumnVector prior_Mu(6); 
-    decomposeTransform(prior, prior_Mu(1), prior_Mu(2), prior_Mu(3), prior_Mu(4), prior_Mu(5), prior_Mu(6));
-    SymmetricMatrix prior_Cov(6); 
-    for (unsigned int i=1; i<=6; i++) {
-      for (unsigned int j=1; j<=6; j++){
-	if (i==j)  prior_Cov(i,j) = pow(0.001,2);
-	else prior_Cov(i,j) = 0;
-      }
+    ColumnVector prior_Mu(6);
+    decomposeTransform(prior, prior_Mu(1), prior_Mu(2), prior_Mu(3),
+                              prior_Mu(4), prior_Mu(5), prior_Mu(6));
+    SymmetricMatrix prior_Cov(6);
+    for (unsigned int i=1; i<=6; i++)
+    {
+        for (unsigned int j=1; j<=6; j++)
+        {
+            if (i==j)
+            {
+                prior_Cov(i,j) = pow(0.001,2);
+            }
+            else
+            {
+                prior_Cov(i,j) = 0;
+            }
+        }
     }
     prior_  = new Gaussian(prior_Mu,prior_Cov);
     filter_ = new ExtendedKalmanFilter(prior_);
@@ -134,7 +205,7 @@ namespace estimation
 
     // filter initialized
     filter_initialized_ = true;
-  }
+}
 
 
 

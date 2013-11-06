@@ -43,7 +43,7 @@
 #include <model/linearanalyticmeasurementmodel_gaussianuncertainty.h>
 #include <pdf/analyticconditionalgaussian.h>
 #include <pdf/linearanalyticconditionalgaussian.h>
-#include "nonlinearanalyticconditionalgaussianodo.h"
+#include <robot_pose_ekf/nonlinearanalyticconditionalgaussianodo.h>
 
 // TF
 #include <tf/tf.h>
@@ -66,6 +66,13 @@ public:
   /// destructor
   virtual ~OdomEstimation();
 
+  //! Set name for each frame id from the ros node.
+  void setFrameIds(std::string base_frame_id,
+                   std::string odom_frame_id,
+                   std::string imu_frame_id,
+                   std::string gps_frame_id,
+                   std::string output_frame_id);
+
   /** update the extended Kalman filter
    * \param odom_active specifies if the odometry sensor is active or not
    * \param imu_active specifies if the imu sensor is active or not
@@ -74,7 +81,11 @@ public:
    * \param diagnostics_res returns false if the diagnostics found that the sensor measurements are inconsistent
    * returns true on successfull update
    */
-  bool update(bool odom_active, bool imu_active, bool gps_active, const ros::Time& filter_time, bool& diagnostics_res);
+  bool update(bool odom_active,
+              bool imu_active,
+              bool gps_active,
+              const ros::Time& filter_time,
+              bool& diagnostics_res);
 
   /** initialize the extended Kalman filter
    * \param prior the prior robot pose
@@ -116,9 +127,11 @@ public:
 
   /** Add a sensor measurement to the measurement buffer
    * \param meas the measurement to add
-   * \param covar the 6x6 covariance matrix of this measurement, as defined in the PoseWithCovariance message
+   * \param covar the 6x6 covariance matrix of this measurement,
+   *        as defined in the PoseWithCovariance message
    */
-  void addMeasurement(const tf::StampedTransform& meas, const MatrixWrapper::SymmetricMatrix& covar);
+  void addMeasurement(const tf::StampedTransform& meas,
+                      const MatrixWrapper::SymmetricMatrix& covar);
 
 private:
   /// correct for angle overflow
@@ -126,9 +139,12 @@ private:
 
   // decompose Transform into x,y,z,Rx,Ry,Rz
   void decomposeTransform(const tf::StampedTransform& trans,
-			  double& x, double& y, double&z, double&Rx, double& Ry, double& Rz);
+                          double& x, double& y, double&z,
+                          double&Rx, double& Ry, double& Rz);
+
   void decomposeTransform(const tf::Transform& trans,
-			  double& x, double& y, double&z, double&Rx, double& Ry, double& Rz);
+                          double& x, double& y, double&z,
+                          double&Rx, double& Ry, double& Rz);
 
 
   // pdf / model / filter
@@ -142,13 +158,23 @@ private:
   BFL::LinearAnalyticMeasurementModelGaussianUncertainty* gps_meas_model_;
   BFL::Gaussian*                                          prior_;
   BFL::ExtendedKalmanFilter*                              filter_;
-  MatrixWrapper::SymmetricMatrix                          odom_covariance_, imu_covariance_, gps_covariance_;
+  MatrixWrapper::SymmetricMatrix                          odom_covariance_;
+  MatrixWrapper::SymmetricMatrix                          imu_covariance_;
+  MatrixWrapper::SymmetricMatrix                          gps_covariance_;
 
   // vars
   MatrixWrapper::ColumnVector vel_desi_, filter_estimate_old_vec_;
   tf::Transform filter_estimate_old_;
-  tf::StampedTransform odom_meas_, odom_meas_old_, imu_meas_, imu_meas_old_, gps_meas_, gps_meas_old_;
+
+  tf::StampedTransform odom_meas_, odom_meas_old_;
+  tf::StampedTransform imu_meas_, imu_meas_old_;
+  tf::StampedTransform gps_meas_, gps_meas_old_;
+
+  std::string output_frame_id_;
+  std::string base_frame_id_, odom_frame_id_, imu_frame_id_,gps_frame_id_;
+
   ros::Time filter_time_old_;
+
   bool filter_initialized_, odom_initialized_, imu_initialized_, gps_initialized_;
 
   // diagnostics
