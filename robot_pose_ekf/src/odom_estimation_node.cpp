@@ -66,13 +66,12 @@ OdomEstimationNode::OdomEstimationNode()
     ros::NodeHandle nh;
 
     // paramters
-    nh_private.param("output_frame", output_frame_, std::string("odom_combined"));
-
     // topic parameter
     nh_private.param("odom_topic",odom_topic_,std::string("odom"));
     nh_private.param("imu_topic",imu_topic_,std::string("imu"));
     nh_private.param("gps_topic",gps_topic_,std::string("gps"));
 
+    nh_private.param("output_frame_id",output_frame_id_,std::string("odom_combined"));
     nh_private.param("base_frame_id",base_frame_id_,std::string("base_link"));
     nh_private.param("odom_frame_id",odom_frame_id_,std::string("odom"));
     nh_private.param("imu_frame_id",imu_frame_id_,std::string("imu"));
@@ -90,9 +89,15 @@ OdomEstimationNode::OdomEstimationNode()
     timer_ = nh_private.createTimer(ros::Duration(1.0/max(freq,1.0)),
                                     &OdomEstimationNode::spin, this);
 
+    my_filter_.setFrameIds(base_frame_id_,
+                           odom_frame_id_,
+                           imu_frame_id_,
+                           gps_frame_id_,
+                           output_frame_id_);
+
     // advertise our estimation
     pose_pub_ = nh_private.advertise<
-                geometry_msgs::PoseWithCovarianceStamped>(output_frame_, 10);
+                geometry_msgs::PoseWithCovarianceStamped>(output_frame_id_, 10);
 
     // initialize
     filter_stamp_ = Time::now();
@@ -490,7 +495,7 @@ void OdomEstimationNode::spin(const ros::TimerEvent& e)
                 odom_broadcaster_.sendTransform(
                             StampedTransform(tmp,
                                              tmp.stamp_,
-                                             output_frame_,
+                                             output_frame_id_,
                                              base_frame_id_));
 
                 if (debug_)

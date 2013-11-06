@@ -132,7 +132,7 @@ private:
                                  gps_covariance_;
 
   bool debug_, self_diagnose_;
-  std::string output_frame_;
+  std::string output_frame_id_;
 
   // log files for debugging
   std::ofstream odom_file_, imu_file_, gps_file_,
