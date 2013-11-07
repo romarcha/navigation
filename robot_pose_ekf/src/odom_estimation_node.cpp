@@ -62,14 +62,14 @@ OdomEstimationNode::OdomEstimationNode()
     gps_callback_counter_(0),
     ekf_sent_counter_(0)
 {
-    ros::NodeHandle nh_private("~");
     ros::NodeHandle nh;
+    ros::NodeHandle nh_private("~");
 
     // paramters
     // topic parameter
     nh_private.param("odom_topic",odom_topic_,std::string("odom"));
     nh_private.param("imu_topic",imu_topic_,std::string("imu"));
-    nh_private.param("gps_topic",gps_topic_,std::string("gps"));
+    nh_private.param("gps_topic",gps_topic_,std::string("gps_odom"));
 
     nh_private.param("output_frame_id",output_frame_id_,std::string("odom_combined"));
     nh_private.param("base_frame_id",base_frame_id_,std::string("base_link"));
@@ -83,6 +83,7 @@ OdomEstimationNode::OdomEstimationNode()
     nh_private.param("gps_used",   gps_used_, true);
     nh_private.param("debug",   debug_, false);
     nh_private.param("self_diagnose",  self_diagnose_, false);
+
     double freq;
     nh_private.param("freq", freq, 30.0);
 
@@ -304,9 +305,9 @@ void OdomEstimationNode::imuCallback(const ImuConstPtr& imu)
     if (imu_covariance_(1,1) == 0.0)
     {
         SymmetricMatrix measNoiseImu_Cov(3);  measNoiseImu_Cov = 0;
-        measNoiseImu_Cov(1,1) = pow(0.00017,2);  // = 0.01 degrees / sec
-        measNoiseImu_Cov(2,2) = pow(0.00017,2);  // = 0.01 degrees / sec
-        measNoiseImu_Cov(3,3) = pow(0.00017,2);  // = 0.01 degrees / sec
+        measNoiseImu_Cov(1,1) = pow(2,2);  // = 2 degrees / sec
+        measNoiseImu_Cov(2,2) = pow(2,2);  // = 2 degrees / sec
+        measNoiseImu_Cov(3,3) = pow(2,2);  // = 2 degrees / sec
         imu_covariance_ = measNoiseImu_Cov;
     }
 

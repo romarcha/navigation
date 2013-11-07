@@ -473,7 +473,7 @@ void OdomEstimation::getEstimate(Time time, StampedTransform& estimate)
         ROS_ERROR("Cannot get transform at time %f", time.toSec());
         return;
     }
-    transformer_.lookupTransform(odom_frame_id_, base_frame_id_, time, estimate);
+    transformer_.lookupTransform(output_frame_id_, base_frame_id_, time, estimate);
 }
 
 // get most recent filter posterior as PoseWithCovarianceStamped
