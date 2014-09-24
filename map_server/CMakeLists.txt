@@ -21,51 +21,44 @@ catkin_package(
         tf
         nav_msgs
 )
-include_directories( include ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS} )
-add_library(image_loader src/image_loader.cpp)
-target_link_libraries(image_loader SDL SDL_image ${Boost_LIBRARIES})
+#Show header files in IDE
+file(GLOB_RECURSE library_header_files ${BASE_DIR}/include/
+*.h *.hpp)
+add_custom_target( library_headers SOURCES ${library_header_files} )
 
-add_executable(map_server src/main.cpp)
+include_directories( include ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS} )
+
+# Library for loading map image
+add_library(map_image_loader src/map_image_loader/map_image_loader.cpp)
+target_link_libraries(map_image_loader SDL SDL_image ${Boost_LIBRARIES})
+
+# Executable for serving a map
+add_executable(map_server
+    src/main_map_server.cpp
+    src/map_server/map_server.cpp
+)
+
 target_link_libraries(map_server
-    image_loader
+    map_image_loader
     yaml-cpp
     ${catkin_LIBRARIES}
 )
 
-add_executable(map_server-map_saver src/map_saver.cpp)
-set_target_properties(map_server-map_saver PROPERTIES OUTPUT_NAME map_saver)
-target_link_libraries(map_server-map_saver
-    ${catkin_LIBRARIES}
-    )
-
-# copy test data to same place as tests are run
-function(copy_test_data)
-    cmake_parse_arguments(PROJECT "" "" "FILES" ${ARGN})
-    foreach(datafile ${PROJECT_FILES})
-        file(COPY ${datafile} DESTINATION ${PROJECT_BINARY_DIR}/test)
-    endforeach()
-endfunction()
-
-## Tests
-if(CATKIN_ENABLE_TESTING)
-  copy_test_data( FILES
-      test/testmap.bmp
-      test/testmap.png )
-  catkin_add_gtest(${PROJECT_NAME}_utest test/utest.cpp test/test_constants.cpp)
-  target_link_libraries(${PROJECT_NAME}_utest image_loader SDL SDL_image)
-
-  add_executable(rtest test/rtest.cpp test/test_constants.cpp)
-  target_link_libraries( rtest
-      gtest
-      ${catkin_LIBRARIES}
-  )
-  add_dependencies(rtest nav_msgs_gencpp)
-
-  add_rostest(test/rtest.xml)
-endif()
+# Executable for saving a map
+#add_executable(map_saver
+#    src/main_map_saver.cpp
+#    src/map_saver/map_saver.cpp
+#)
+#
+#target_link_libraries(map_saver
+#    ${catkin_LIBRARIES}
+#)
 
 ## Install executables and/or libraries
-install(TARGETS map_server-map_saver map_server image_loader
+install(TARGETS 
+#map_saver 
+map_server 
+map_image_loader
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})

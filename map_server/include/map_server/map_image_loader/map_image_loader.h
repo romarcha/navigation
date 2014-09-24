@@ -26,14 +26,14 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef MAP_SERVER_MAP_SERVER_H
-#define MAP_SERVER_MAP_SERVER_H
+#ifndef MAP_SERVER_MAP_IMAGE_LOADER_H
+#define MAP_SERVER_MAP_IMAGE_LOADER_H
 
 /*
  * Author: Brian Gerkey
  */
 
-#include "nav_msgs/GetMap.h"
+#include <nav_msgs/GetMap.h>
 
 namespace map_server
 {
@@ -55,6 +55,7 @@ namespace map_server
 void loadMapFromFile(nav_msgs::GetMap::Response* resp,
                      const char* fname, double res, bool negate,
                      double occ_th, double free_th, double* origin);
+
 }
 
-#endif
+#endif //MAP_SERVER_MAP_IMAGE_LOADER_H

@@ -40,11 +40,11 @@
 #include <libgen.h>
 #include <fstream>
 
-#include "ros/ros.h"
-#include "ros/console.h"
-#include "map_server/image_loader.h"
-#include "nav_msgs/MapMetaData.h"
-#include "yaml-cpp/yaml.h"
+#include <ros/ros.h>
+#include <ros/console.h>
+#include <map_server/map_image_loader/image_loader.h>
+#include <nav_msgs/MapMetaData.h>
+#include <yaml-cpp/yaml.h>
 
 class MapServer
 {
