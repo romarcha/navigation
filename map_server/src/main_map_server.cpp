@@ -29,9 +29,8 @@
 
 /* Author: Brian Gerkey */
 
-#define USAGE "\nUSAGE: map_server <map.yaml> <topic_name>\n" \
-              "  map.yaml: map description file\n" \
-              "  topic_name (optionsl): name of the topic for map publisher."
+#define USAGE "\nUSAGE: map_server <map.yaml>\n" \
+              "  map.yaml: map description file\n"
 
 #include <map_server/map_server/map_server.h>
 
@@ -39,23 +38,17 @@ int main(int argc, char **argv)
 {
     ros::init(argc, argv, "map_server", ros::init_options::AnonymousName);
 
-    if(argc != 3 && argc != 2)
+    if(argc != 2)
     {
         ROS_ERROR("%s", USAGE);
         exit(-1);
     }
 
-    if (argc != 2)
-    {
-        ROS_WARN("Using deprecated map server interface. Please switch to new interface.");
-    }
-
-    std::string fname(argv[1]);
-    double res = (argc == 2) ? 0.0 : atof(argv[2]);
+    std::string file_name(argv[1]);
 
     try
     {
-        MapServer ms(fname, res);
+        MapServer map_server(file_name);
         ros::spin();
     }
     catch(std::runtime_error& e)

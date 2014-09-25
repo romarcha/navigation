@@ -43,8 +43,7 @@
 class MapServer
 {
   public:
-    /** Trivial constructor */
-    MapServer(const std::string& fname, double res);
+    MapServer(const std::string& fname);
 
   private:
     ros::NodeHandle n;

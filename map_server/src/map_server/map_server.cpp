@@ -31,39 +31,103 @@
 
 #include <map_server/map_server/map_server.h>
 
-MapServer::MapServer(const std::string& fname, double res)
+/**
+ * \brief Returns the value of a parameter or a default value.
+ *
+ * \param key the key of the parameter
+ * \param default_value the default value to use in case the parameter
+ *      does not exist
+ * \return value of the parameter
+ */
+template<typename T>
+T get_param(std::string const& key, T default_value)
 {
-  std::string mapfname = "";
-  double origin[3];
-  int negate;
-  double occ_th, free_th;
-  std::string frame_id;
-  ros::NodeHandle private_nh("~");
-  private_nh.param("frame_id", frame_id, std::string("map"));
-  deprecated = (res != 0);
-  if (!deprecated) {
-    //mapfname = fname + ".pgm";
-    //std::ifstream fin((fname + ".yaml").c_str());
+    ros::NodeHandle node("~");
+
+    T value;
+    node.param(key, value, default_value);
+    return value;
+}
+
+MapServer::MapServer(const std::string& fname)
+{
+    std::string mapfname = "";
+    double origin[3];
+    int negate;
+    double occ_th, free_th;
+    double res;
+
+    std::string frame_id = get_param<std::string>("frame_id","map");
+    std::string topic_name = get_param<std::string>("topic_id","map");
+
+
     std::ifstream fin(fname.c_str());
-    if (fin.fail()) {
-      ROS_ERROR("Map_server could not open %s.", fname.c_str());
-      exit(-1);
+    if (fin.fail())
+    {
+        ROS_ERROR("Map_server could not open %s.", fname.c_str());
+        exit(-1);
     }
-    YAML::Parser parser(fin);
-    YAML::Node doc;
-    parser.GetNextDocument(doc);
-    try {
-      doc["resolution"] >> res;
-    } catch (YAML::InvalidScalar) {
-      ROS_ERROR("The map does not contain a resolution tag or it is invalid.");
-      exit(-1);
+
+    // Read the .yaml file using the new yaml library.
+    YAML::Node yaml_file;
+    try
+    {
+        yaml_file = YAML::LoadFile(fname);
     }
-    try {
-      doc["negate"] >> negate;
-    } catch (YAML::InvalidScalar) {
-      ROS_ERROR("The map does not contain a negate tag or it is invalid.");
-      exit(-1);
+    catch (YAML::Exception &e)
+    {
+        ROS_ERROR(e.what());
+        exit(-1);
     }
+
+    // Read resolution
+    try
+    {
+        res = yaml_file["resoltuion"].as<double>();
+    }
+    catch (YAML::Exception &e)
+    {
+        ROS_ERROR("Error reading map resolution.");
+        ROS_ERROR_STREAM("YAML error: " << e.what());
+        exit(-1);
+    }
+
+    // Read resolution
+    try
+    {
+        res = yaml_file["resoltuion"].as<double>();
+    }
+    catch (YAML::Exception &e)
+    {
+        ROS_ERROR("Error reading map resolution.");
+        ROS_ERROR_STREAM("YAML error: " << e.what());
+        exit(-1);
+    }
+
+    // Read negate
+    try
+    {
+        negate = yaml_file["negate"].as<int>();
+    }
+    catch (YAML::Exception &e)
+    {
+        ROS_ERROR("Error reading negate.");
+        ROS_ERROR_STREAM("YAML error: " << e.what());
+        exit(-1);
+    }
+
+    // Read occupied threshold
+    try
+    {
+        occ_th = yaml_file["occupied_thresh"].as<double>();
+    }
+    catch (YAML::Exception &e)
+    {
+        ROS_ERROR("Error reading occupied threshold.");
+        ROS_ERROR_STREAM("YAML error: " << e.what());
+        exit(-1);
+    }
+    /*
     try {
       doc["occupied_thresh"] >> occ_th;
     } catch (YAML::InvalidScalar) {
@@ -99,39 +163,34 @@ MapServer::MapServer(const std::string& fname, double res)
         mapfname = std::string(dirname(fname_copy)) + '/' + mapfname;
         free(fname_copy);
       }
-    } catch (YAML::InvalidScalar) {
-      ROS_ERROR("The map does not contain an image tag or it is invalid.");
-      exit(-1);
     }
-  } else {
-    private_nh.param("negate", negate, 0);
-    private_nh.param("occupied_thresh", occ_th, 0.65);
-    private_nh.param("free_thresh", free_th, 0.196);
-    mapfname = fname;
-    origin[0] = origin[1] = origin[2] = 0.0;
-  }
+    catch (YAML::InvalidScalar)
+    {
+        ROS_ERROR("The map does not contain an image tag or it is invalid.");
+        exit(-1);
+    }
 
-  ROS_INFO("Loading map from image \"%s\"", mapfname.c_str());
-  map_server::loadMapFromFile(&map_resp_,mapfname.c_str(),res,negate,occ_th,free_th, origin);
-  map_resp_.map.info.map_load_time = ros::Time::now();
-  map_resp_.map.header.frame_id = frame_id;
-  map_resp_.map.header.stamp = ros::Time::now();
-  ROS_INFO("Read a %d X %d map @ %.3lf m/cell",
+    ROS_INFO("Loading map from image \"%s\"", mapfname.c_str());
+    map_server::loadMapFromFile(&map_resp_,mapfname.c_str(),res,negate,occ_th,free_th, origin);
+    map_resp_.map.info.map_load_time = ros::Time::now();
+    map_resp_.map.header.frame_id = frame_id;
+    map_resp_.map.header.stamp = ros::Time::now();
+    ROS_INFO("Read a %d X %d map @ %.3lf m/cell",
            map_resp_.map.info.width,
            map_resp_.map.info.height,
            map_resp_.map.info.resolution);
-  meta_data_message_ = map_resp_.map.info;
+    meta_data_message_ = map_resp_.map.info;
 
-  service = n.advertiseService("static_map", &MapServer::mapCallback, this);
-  //pub = n.advertise<nav_msgs::MapMetaData>("map_metadata", 1,
+    service = n.advertiseService("static_map", &MapServer::mapCallback, this);
 
-  // Latched publisher for metadata
-  metadata_pub= n.advertise<nav_msgs::MapMetaData>("map_metadata", 1, true);
-  metadata_pub.publish( meta_data_message_ );
+    // Latched publisher for metadata
+    metadata_pub= n.advertise<nav_msgs::MapMetaData>("map_metadata", 1, true);
+    metadata_pub.publish( meta_data_message_ );
 
-  // Latched publisher for data
-  map_pub = n.advertise<nav_msgs::OccupancyGrid>("map", 1, true);
-  map_pub.publish( map_resp_.map );
+    // Latched publisher for data
+    map_pub = n.advertise<nav_msgs::OccupancyGrid>("map", 1, true);
+    map_pub.publish( map_resp_.map );
+    */
 }
 
 bool MapServer::mapCallback(nav_msgs::GetMap::Request  &req,
