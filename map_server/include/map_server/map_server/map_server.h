@@ -29,6 +29,9 @@
 
 /* Author: Brian Gerkey */
 
+#ifndef __MAP_SERVER_MAP_SERVER_H__
+#define __MAP_SERVER_MAP_SERVER_H__
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <libgen.h>
@@ -61,3 +64,5 @@ class MapServer
     nav_msgs::MapMetaData meta_data_message_;
     nav_msgs::GetMap::Response map_resp_;
 };
+
+#endif //__MAP_SERVER_MAP_SERVER_H__

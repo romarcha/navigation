@@ -45,18 +45,18 @@ target_link_libraries(map_server
 )
 
 # Executable for saving a map
-#add_executable(map_saver
-#    src/main_map_saver.cpp
-#    src/map_saver/map_saver.cpp
-#)
-#
-#target_link_libraries(map_saver
-#    ${catkin_LIBRARIES}
-#)
+add_executable(map_saver
+    src/main_map_saver.cpp
+    src/map_saver/map_saver.cpp
+)
+
+target_link_libraries(map_saver
+    ${catkin_LIBRARIES}
+)
 
 ## Install executables and/or libraries
 install(TARGETS 
-#map_saver 
+map_saver 
 map_server 
 map_image_loader
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
