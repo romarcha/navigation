@@ -76,18 +76,6 @@ MapServer::MapServer(const std::string& fname)
     }
     catch (YAML::Exception &e)
     {
-        ROS_ERROR(e.what());
-        exit(-1);
-    }
-
-    // Read resolution
-    try
-    {
-        res = yaml_file["resoltuion"].as<double>();
-    }
-    catch (YAML::Exception &e)
-    {
-        ROS_ERROR("Error reading map resolution.");
         ROS_ERROR_STREAM("YAML error: " << e.what());
         exit(-1);
     }
@@ -95,7 +83,7 @@ MapServer::MapServer(const std::string& fname)
     // Read resolution
     try
     {
-        res = yaml_file["resoltuion"].as<double>();
+        res = yaml_file["resolution"].as<double>();
     }
     catch (YAML::Exception &e)
     {
@@ -127,46 +115,56 @@ MapServer::MapServer(const std::string& fname)
         ROS_ERROR_STREAM("YAML error: " << e.what());
         exit(-1);
     }
-    /*
-    try {
-      doc["occupied_thresh"] >> occ_th;
-    } catch (YAML::InvalidScalar) {
-      ROS_ERROR("The map does not contain an occupied_thresh tag or it is invalid.");
-      exit(-1);
+
+    // Read free threshold
+    try
+    {
+        free_th = yaml_file["free_thresh"].as<double>();
     }
-    try {
-      doc["free_thresh"] >> free_th;
-    } catch (YAML::InvalidScalar) {
-      ROS_ERROR("The map does not contain a free_thresh tag or it is invalid.");
-      exit(-1);
-    }
-    try {
-      doc["origin"][0] >> origin[0];
-      doc["origin"][1] >> origin[1];
-      doc["origin"][2] >> origin[2];
-    } catch (YAML::InvalidScalar) {
-      ROS_ERROR("The map does not contain an origin tag or it is invalid.");
-      exit(-1);
-    }
-    try {
-      doc["image"] >> mapfname;
-      // TODO: make this path-handling more robust
-      if(mapfname.size() == 0)
-      {
-        ROS_ERROR("The image tag cannot be an empty string.");
+    catch (YAML::Exception &e)
+    {
+        ROS_ERROR("Error reading free threshold.");
+        ROS_ERROR_STREAM("YAML error: " << e.what());
         exit(-1);
-      }
-      if(mapfname[0] != '/')
-      {
-        // dirname can modify what you pass it
-        char* fname_copy = strdup(fname.c_str());
-        mapfname = std::string(dirname(fname_copy)) + '/' + mapfname;
-        free(fname_copy);
-      }
     }
-    catch (YAML::InvalidScalar)
+
+    // Read origin array
+    try
+    {
+        origin[0] = yaml_file["origin"][0].as<double>();
+        origin[1] = yaml_file["origin"][1].as<double>();
+        origin[2] = yaml_file["origin"][2].as<double>();
+
+    }
+    catch (YAML::Exception &e)
+    {
+        ROS_ERROR("The map does not contain an origin tag or it is invalid.");
+        ROS_ERROR_STREAM("YAML error: " << e.what());
+        exit(-1);
+    }
+
+    // Read map image filename
+    try
+    {
+        mapfname = yaml_file["image"].as<std::string>();
+        if(mapfname.size() == 0)
+        {
+          ROS_ERROR("The image tag cannot be an empty string.");
+          exit(-1);
+        }
+        //Concatenate the entire path from the yaml filename
+        if(mapfname[0] != '/')
+        {
+          // dirname can modify what you pass it
+          char* fname_copy = strdup(fname.c_str());
+          mapfname = std::string(dirname(fname_copy)) + '/' + mapfname;
+          free(fname_copy);
+        }
+    }
+    catch (YAML::Exception &e)
     {
         ROS_ERROR("The map does not contain an image tag or it is invalid.");
+        ROS_ERROR_STREAM("YAML error: " << e.what());
         exit(-1);
     }
 
@@ -190,7 +188,7 @@ MapServer::MapServer(const std::string& fname)
     // Latched publisher for data
     map_pub = n.advertise<nav_msgs::OccupancyGrid>("map", 1, true);
     map_pub.publish( map_resp_.map );
-    */
+
 }
 
 bool MapServer::mapCallback(nav_msgs::GetMap::Request  &req,
