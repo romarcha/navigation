@@ -11,6 +11,9 @@ find_package(catkin REQUIRED
 
 find_package(Boost REQUIRED COMPONENTS system)
 
+find_package(SDL REQUIRED)
+find_package(SDL_image REQUIRED)
+
 catkin_package(
     INCLUDE_DIRS
         include
